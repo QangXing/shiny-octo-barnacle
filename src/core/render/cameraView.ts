@@ -54,7 +54,7 @@ export function renderCameraView(
 
   // 摄像机1为纯俯视，只绘制 xy 平面精灵；垂直墙面会缩成线，直接跳过
   const groundSprites = sprites.filter((s) => s.plane === 'xy');
-  renderSprites(filmCtx, groundSprites, (x, y, z) => projectCamera1(cam, x, y, z), cam);
+  renderSprites(filmCtx, groundSprites, (x, y) => projectCamera1(cam, x, y), cam);
 
   // 叠加缓存的暗角与扫描线
   filmCtx.drawImage(getVignetteCanvas(), 0, 0);

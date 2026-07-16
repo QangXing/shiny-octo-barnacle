@@ -12,7 +12,6 @@ export function projectCamera1(
   cam: Camera,
   x: number,
   y: number,
-  _z: number,
 ): [number, number] {
   const dx = x - cam.n;
   const dy = y - cam.m;

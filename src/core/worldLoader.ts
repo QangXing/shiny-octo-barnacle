@@ -16,6 +16,9 @@
 
 import type { Sprite, SpritePlane } from '@/core/sprite';
 
+/** world.txt 中 1 个单位对应的世界长度（像素） */
+export const UNIT_SCALE = 128;
+
 interface WorldEntry {
   x1: number;
   y1: number;
@@ -36,12 +39,12 @@ function parseLine(line: string): WorldEntry | null {
   if (!m) return null;
 
   return {
-    x1: parseFloat(m[1]),
-    y1: parseFloat(m[2]),
-    z1: parseFloat(m[3]),
-    x2: parseFloat(m[4]),
-    y2: parseFloat(m[5]),
-    z2: parseFloat(m[6]),
+    x1: parseFloat(m[1]) * UNIT_SCALE,
+    y1: parseFloat(m[2]) * UNIT_SCALE,
+    z1: parseFloat(m[3]) * UNIT_SCALE,
+    x2: parseFloat(m[4]) * UNIT_SCALE,
+    y2: parseFloat(m[5]) * UNIT_SCALE,
+    z2: parseFloat(m[6]) * UNIT_SCALE,
     imageSrc: m[7],
   };
 }
@@ -51,7 +54,7 @@ interface ParsedWorld {
   structures: Map<string, WorldEntry[]>;
 }
 
-function parseWorldText(text: string): ParsedWorld {
+export function parseWorldText(text: string): ParsedWorld {
   const structures = new Map<string, WorldEntry[]>();
   const entries: WorldEntry[] = [];
 
@@ -79,9 +82,9 @@ function parseWorldText(text: string): ParsedWorld {
     );
     if (stuCall) {
       const name = stuCall[1];
-      const ox = stuCall[2] ? parseFloat(stuCall[2]) : 0;
-      const oy = stuCall[3] ? parseFloat(stuCall[3]) : 0;
-      const oz = stuCall[4] ? parseFloat(stuCall[4]) : 0;
+      const ox = stuCall[2] ? parseFloat(stuCall[2]) * UNIT_SCALE : 0;
+      const oy = stuCall[3] ? parseFloat(stuCall[3]) * UNIT_SCALE : 0;
+      const oz = stuCall[4] ? parseFloat(stuCall[4]) * UNIT_SCALE : 0;
       const structEntries = structures.get(name);
       if (structEntries) {
         for (const e of structEntries) {
@@ -173,11 +176,19 @@ function createAlignedTexture(
 async function entryToSprite(
   entry: WorldEntry,
   basePath: string,
+  materials?: Record<string, string>,
 ): Promise<Sprite | null> {
   const plane = detectPlane(entry);
   if (!plane) return null;
 
-  const img = await loadImage(`${basePath}${entry.imageSrc}`);
+  // 只允许调用材质包内的纯文件名，禁止路径穿越
+  const safeName = entry.imageSrc.replace(/[\\/]/g, '');
+  if (!safeName || safeName.includes('..')) {
+    throw new Error(`非法贴图路径: ${entry.imageSrc}`);
+  }
+
+  const materialUrl = materials?.[safeName];
+  const img = await loadImage(materialUrl ?? `${basePath}${safeName}`);
 
   let worldW: number;
   let worldH: number;
@@ -211,11 +222,29 @@ async function entryToSprite(
  * 加载世界存档文件，返回精灵列表。
  * @param worldFilePath 存档文件路径（相对于 public 目录），如 '/world/world.txt'
  */
+export async function buildSpritesFromWorldText(
+  text: string,
+  basePath: string,
+  materials?: Record<string, string>,
+): Promise<Sprite[]> {
+  const { entries } = parseWorldText(text);
+  const sprites: Sprite[] = [];
+  for (const entry of entries) {
+    try {
+      const sprite = await entryToSprite(entry, basePath, materials);
+      if (sprite) sprites.push(sprite);
+    } catch (err) {
+      console.warn(`[WorldLoader] 跳过 ${entry.imageSrc}:`, err);
+    }
+  }
+  return sprites;
+}
+
+const MATERIAL_BASE_PATH = '/material/';
+
 export async function loadWorldSprites(
   worldFilePath: string,
 ): Promise<Sprite[]> {
-  const basePath = worldFilePath.substring(0, worldFilePath.lastIndexOf('/') + 1);
-
   let text: string;
   try {
     const resp = await fetch(worldFilePath);
@@ -225,17 +254,5 @@ export async function loadWorldSprites(
     return [];
   }
 
-  const { entries } = parseWorldText(text);
-
-  const sprites: Sprite[] = [];
-  for (const entry of entries) {
-    try {
-      const sprite = await entryToSprite(entry, basePath);
-      if (sprite) sprites.push(sprite);
-    } catch (err) {
-      console.warn(`[WorldLoader] 跳过 ${entry.imageSrc}:`, err);
-    }
-  }
-
-  return sprites;
+  return buildSpritesFromWorldText(text, MATERIAL_BASE_PATH);
 }

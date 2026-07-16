@@ -1,43 +1,42 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRendererStore } from '@/store/rendererStore';
 import type { Camera } from '@/store/rendererStore';
 import { FILM_WIDTH, FILM_HEIGHT, TILE_SIZE } from '@/core/config';
 import { createTileTexture } from '@/core/render/tileTexture';
-import { createPointerHandlers, subscribeKeyboard } from '@/core/input';
+import { createPointerHandlers } from '@/core/input';
 import type { PointerState } from '@/core/input';
-import { initScreenCanvas, startRenderLoop } from '@/core/loop';
+import { initResponsiveEditorCanvas, startEditorRenderLoop } from '@/core/loop';
 import { createSampleSprites } from '@/core/sprite';
-import { loadWorldSprites } from '@/core/worldLoader';
+import { buildSpritesFromWorldText } from '@/core/worldLoader';
 
-export function useRenderer(canvasRef: React.RefObject<HTMLCanvasElement | null>) {
-  const mode = useRendererStore((state) => state.mode);
-  const joystick = useRendererStore((state) => state.joystick);
+const MATERIAL_BASE_PATH = '/material/';
 
+export const EDITOR_WIDTH = 1000;
+export const EDITOR_HEIGHT = 750;
+
+export function useEditorRenderer(
+  canvasRef: React.RefObject<HTMLCanvasElement | null>,
+  worldText: string,
+) {
   const filmCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const filmCtxRef = useRef<CanvasRenderingContext2D | null>(null);
   const tilePatternRef = useRef<CanvasPattern | null>(null);
   const tileCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const spritesRef = useRef(createSampleSprites());
-  const worldLoadedRef = useRef(false);
-
-  const keysRef = useRef<Record<string, boolean>>({});
-  const pointerRef = useRef<PointerState | null>(null);
-  const joystickCenterRef = useRef({ x: 90, y: 0 });
 
   const cameraRef = useRef<Camera>(useRendererStore.getState().camera);
-  const modeRef = useRef(mode);
-  const joystickRef = useRef(joystick);
-
-  // 保持 refs 与 store 同步
-  useEffect(() => {
-    modeRef.current = mode;
-  }, [mode]);
+  const modeRef = useRef(useRendererStore.getState().mode);
+  const pointerRef = useRef<PointerState | null>(null);
+  const joystickCenterRef = useRef({ x: -10000, y: -10000 });
 
   useEffect(() => {
-    joystickRef.current = joystick;
-  }, [joystick]);
+    const unsubscribe = useRendererStore.subscribe((state) => {
+      cameraRef.current = state.camera;
+      modeRef.current = state.mode;
+    });
+    return unsubscribe;
+  }, []);
 
-  // 初始化离屏胶片与贴图
   useEffect(() => {
     const film = document.createElement('canvas');
     film.width = FILM_WIDTH;
@@ -51,23 +50,27 @@ export function useRenderer(canvasRef: React.RefObject<HTMLCanvasElement | null>
     tileCanvasRef.current = tileCanvas;
     const pattern = filmCtx.createPattern(tileCanvas, 'repeat');
     if (pattern) tilePatternRef.current = pattern;
-
-    // 加载世界存档精灵并合并到 spritesRef
-    (async () => {
-      if (worldLoadedRef.current) return;
-      worldLoadedRef.current = true;
-      try {
-        const worldSprites = await loadWorldSprites('/world/world.txt');
-        if (worldSprites.length > 0) {
-          spritesRef.current = [...spritesRef.current, ...worldSprites];
-        }
-      } catch (err) {
-        console.warn('[WorldLoader] 加载世界存档失败:', err);
-      }
-    })();
   }, []);
 
-  // 屏幕 canvas 尺寸管理 + 动画循环
+  const materials = useRendererStore((state) => state.materials);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const worldSprites = await buildSpritesFromWorldText(worldText, MATERIAL_BASE_PATH, materials);
+        if (cancelled) return;
+        spritesRef.current = worldSprites.length > 0 ? worldSprites : createSampleSprites();
+      } catch (err) {
+        console.warn('[Editor] 世界解析失败:', err);
+        spritesRef.current = createSampleSprites();
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [worldText, materials]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const filmCanvas = filmCanvasRef.current;
@@ -78,10 +81,13 @@ export function useRenderer(canvasRef: React.RefObject<HTMLCanvasElement | null>
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const unsubscribeResize = initScreenCanvas(canvas, ctx);
-    const unsubscribeKeyboard = subscribeKeyboard(keysRef);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const { getSize, cleanup: cleanupResize } = initResponsiveEditorCanvas(canvas, ctx, dpr);
 
-    const cancelLoop = startRenderLoop(
+    const keysRef = { current: {} as Record<string, boolean> };
+    const joystickRef = { current: { active: false, dx: 0, dy: 0 } };
+
+    const cancelLoop = startEditorRenderLoop(
       {
         canvas,
         ctx,
@@ -95,34 +101,21 @@ export function useRenderer(canvasRef: React.RefObject<HTMLCanvasElement | null>
         pointerRef,
       },
       modeRef,
+      getSize,
     );
 
     return () => {
-      unsubscribeResize();
-      unsubscribeKeyboard();
+      cleanupResize();
       cancelLoop();
     };
   }, [canvasRef]);
 
-  // 更新摇杆中心（左下角）
-  const updateJoystickCenter = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    joystickCenterRef.current = {
-      x: 90,
-      y: canvas.clientHeight - 90,
-    };
-  }, [canvasRef]);
-
-  useEffect(() => {
-    updateJoystickCenter();
-  }, [updateJoystickCenter]);
-
   const pointerHandlers = createPointerHandlers({
     pointerRef,
     joystickCenterRef,
-    setJoystick: useRendererStore.getState().setJoystick,
+    setJoystick: () => {},
     getCanvas: () => canvasRef.current,
+    rotateSpeedMultiplier: () => useRendererStore.getState().editorRotateSpeed,
   });
 
   return pointerHandlers;

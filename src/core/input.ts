@@ -28,6 +28,7 @@ export interface InputContext {
   joystickCenterRef: React.MutableRefObject<{ x: number; y: number }>;
   setJoystick: (joystick: Partial<JoystickState>) => void;
   getCanvas: () => HTMLCanvasElement | null;
+  rotateSpeedMultiplier?: number | (() => number);
 }
 
 export function createPointerHandlers(
@@ -96,7 +97,11 @@ export function createPointerHandlers(
       });
     } else if (ptr.role === 'rotate') {
       const deltaX = x - ptr.lastX;
-      ptr.rotateDelta = (ptr.rotateDelta ?? 0) + deltaX * ROTATE_SPEED;
+      const multiplier =
+        typeof ctx.rotateSpeedMultiplier === 'function'
+          ? ctx.rotateSpeedMultiplier()
+          : (ctx.rotateSpeedMultiplier ?? 1);
+      ptr.rotateDelta = (ptr.rotateDelta ?? 0) + deltaX * ROTATE_SPEED * multiplier;
     }
 
     ptr.lastX = x;

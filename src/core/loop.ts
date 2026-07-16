@@ -173,3 +173,160 @@ export function startRenderLoop(
 
   return () => cancelAnimationFrame(state.animationId);
 }
+
+export function initEditorCanvas(
+  canvas: HTMLCanvasElement,
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  dpr: number,
+): () => void {
+  const resize = () => {
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
+  };
+
+  resize();
+  window.addEventListener('resize', resize);
+  return () => window.removeEventListener('resize', resize);
+}
+
+export interface ResponsiveSize {
+  width: number;
+  height: number;
+}
+
+export function initResponsiveEditorCanvas(
+  canvas: HTMLCanvasElement,
+  ctx: CanvasRenderingContext2D,
+  dpr: number,
+): { getSize: () => ResponsiveSize; cleanup: () => void } {
+  const size: ResponsiveSize = { width: 0, height: 0 };
+
+  const resize = () => {
+    const rect = canvas.getBoundingClientRect();
+    const width = Math.max(1, Math.round(rect.width));
+    const height = Math.max(1, Math.round(rect.height));
+    size.width = width;
+    size.height = height;
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
+  };
+
+  resize();
+
+  let ro: ResizeObserver | null = null;
+  if (typeof ResizeObserver !== 'undefined') {
+    ro = new ResizeObserver(resize);
+    ro.observe(canvas);
+  } else {
+    window.addEventListener('resize', resize);
+  }
+
+  const cleanup = () => {
+    if (ro) {
+      ro.disconnect();
+    } else {
+      window.removeEventListener('resize', resize);
+    }
+  };
+
+  return { getSize: () => size, cleanup };
+}
+
+export function startEditorRenderLoop(
+  refs: LoopRefs,
+  modeRef: MutableRefObject<ViewMode>,
+  getSize: () => ResponsiveSize,
+): () => void {
+  const state: LoopState = {
+    animationId: 0,
+    lastTime: 0,
+    frameCount: 0,
+    fpsTime: 0,
+    lastUiUpdate: 0,
+  };
+
+  const { setFps, setCamera } = useRendererStore.getState();
+
+  const wrapTheta = (theta: number): number => {
+    const twoPi = Math.PI * 2;
+    let t = theta % twoPi;
+    if (t < 0) t += twoPi;
+    return t;
+  };
+
+  const applyPointerRotation = () => {
+    const ptr = refs.pointerRef.current;
+    if (!ptr || ptr.rotateDelta === undefined || ptr.rotateDelta === 0) return;
+    const cam = refs.cameraRef.current;
+    refs.cameraRef.current = { ...cam, theta: wrapTheta(cam.theta + ptr.rotateDelta) };
+    ptr.rotateDelta = 0;
+  };
+
+  const drawFilmToScreen = () => {
+    // 编辑器预览使用 cover，让胶片填满整个预览区；摄像机原点位于胶片中心，缩放时保持居中
+    const { width, height } = getSize();
+    const filmAspect = FILM_WIDTH / FILM_HEIGHT;
+    const screenAspect = width / height;
+    let drawW: number;
+    let drawH: number;
+    if (screenAspect > filmAspect) {
+      drawW = width;
+      drawH = width / filmAspect;
+    } else {
+      drawH = height;
+      drawW = height * filmAspect;
+    }
+    const drawX = (width - drawW) / 2;
+    const drawY = (height - drawH) / 2;
+
+    refs.ctx.drawImage(refs.filmCanvas, drawX, drawY, drawW, drawH);
+  };
+
+  const loop = (time: number) => {
+    state.lastTime = time;
+
+    refs.cameraRef.current.zoom = useRendererStore.getState().camera.zoom;
+
+    applyPointerRotation();
+
+    const { width, height } = getSize();
+
+    if (modeRef.current === 'camera') {
+      renderCameraView(refs.filmCtx, refs.tilePattern, refs.cameraRef.current, refs.spritesRef.current);
+      drawFilmToScreen();
+    } else if (modeRef.current === 'camera2') {
+      renderObliqueView(refs.filmCtx, refs.tilePattern, refs.cameraRef.current, refs.spritesRef.current);
+      drawFilmToScreen();
+    } else {
+      renderDebugView(refs.ctx, width, height, refs.cameraRef.current);
+    }
+
+    state.frameCount++;
+    if (time - state.fpsTime >= FPS_UPDATE_INTERVAL) {
+      setFps(state.frameCount);
+      state.frameCount = 0;
+      state.fpsTime = time;
+    }
+
+    if (time - state.lastUiUpdate >= UI_UPDATE_INTERVAL) {
+      setCamera(refs.cameraRef.current);
+      state.lastUiUpdate = time;
+    }
+
+    state.animationId = requestAnimationFrame(loop);
+  };
+
+  state.animationId = requestAnimationFrame(loop);
+
+  return () => cancelAnimationFrame(state.animationId);
+}
