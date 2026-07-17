@@ -8,7 +8,7 @@ export function renderDebugView(
   height: number,
   cam: Camera,
 ): void {
-  screenCtx.fillStyle = '#0f172a';
+  screenCtx.fillStyle = '#7dd3fc';
   screenCtx.fillRect(0, 0, width, height);
 
   // 调试视图缩放：让世界中的一个较大范围适配屏幕
@@ -68,7 +68,7 @@ function drawOrigin(
   worldToScreen: (x: number, y: number) => [number, number],
 ): void {
   const [ox, oy] = worldToScreen(0, 0);
-  ctx.strokeStyle = '#f59e0b';
+  ctx.strokeStyle = '#0ea5e9';
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(ox - 12, oy);
@@ -110,7 +110,7 @@ function drawCameraPose(
   worldToScreen: (x: number, y: number) => [number, number],
 ): void {
   const [cx, cy] = worldToScreen(cam.n, cam.m);
-  ctx.fillStyle = '#f59e0b';
+  ctx.fillStyle = '#0ea5e9';
   ctx.beginPath();
   ctx.arc(cx, cy, 8, 0, Math.PI * 2);
   ctx.fill();
@@ -120,7 +120,7 @@ function drawCameraPose(
   const arrowX = cam.n - Math.sin(cam.theta) * dirLen;
   const arrowY = cam.m + Math.cos(cam.theta) * dirLen;
   const [ax, ay] = worldToScreen(arrowX, arrowY);
-  ctx.strokeStyle = '#fbbf24';
+  ctx.strokeStyle = '#38bdf8';
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(cx, cy);

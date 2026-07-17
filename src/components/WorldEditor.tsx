@@ -10,14 +10,12 @@ type EditorTab = 'camera' | 'world' | 'intro';
 
 const MIN_BOTTOM_HEIGHT = 180;
 const MAX_BOTTOM_RATIO = 0.75;
-const DEFAULT_BOTTOM_HEIGHT = 300;
+const DEFAULT_BOTTOM_HEIGHT = 280;
 
 export function WorldEditor() {
   const [activeTab, setActiveTab] = useState<EditorTab>('camera');
   const [worldText, setWorldText] = useState<string>('');
   const [bottomHeight, setBottomHeight] = useState<number>(DEFAULT_BOTTOM_HEIGHT);
-  const editorRotateSpeed = useRendererStore((state) => state.editorRotateSpeed);
-  const setEditorRotateSpeed = useRendererStore((state) => state.setEditorRotateSpeed);
   const mainRef = useRef<HTMLElement>(null);
   const draggingRef = useRef(false);
 
@@ -86,53 +84,6 @@ export function WorldEditor() {
         </div>
 
         <section className="world-editor-bottom" style={{ height: bottomHeight }}>
-          <div className="world-editor-speed">
-            <span>滑动最大灵敏度</span>
-            <input
-              type="range"
-              min={0.1}
-              max={5}
-              step={0.1}
-              value={editorRotateSpeed}
-              onChange={(e) => setEditorRotateSpeed(parseFloat(e.target.value))}
-              className="editor-slider"
-            />
-            <span className="world-editor-speed-value">{editorRotateSpeed.toFixed(1)}x</span>
-          </div>
-
-          <div className="world-editor-tabs" role="tablist">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'camera'}
-              onClick={() => setActiveTab('camera')}
-              className={`world-editor-tab-btn ${activeTab === 'camera' ? 'active' : ''}`}
-            >
-              <Camera className="mr-2 h-4 w-4" />
-              摄像机调试
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'world'}
-              onClick={() => setActiveTab('world')}
-              className={`world-editor-tab-btn ${activeTab === 'world' ? 'active' : ''}`}
-            >
-              <FileText className="mr-2 h-4 w-4" />
-              world 文件编辑
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'intro'}
-              onClick={() => setActiveTab('intro')}
-              className={`world-editor-tab-btn ${activeTab === 'intro' ? 'active' : ''}`}
-            >
-              <Info className="mr-2 h-4 w-4" />
-              介绍
-            </button>
-          </div>
-
           <div className="world-editor-tab-content" role="tabpanel">
             {activeTab === 'camera' && <EditorControls />}
             {activeTab === 'world' && (
@@ -146,6 +97,41 @@ export function WorldEditor() {
           </div>
         </section>
       </main>
+
+      <nav className="world-editor-nav" role="tablist">
+        <div className="world-editor-tabs">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'camera'}
+            onClick={() => setActiveTab('camera')}
+            className={`world-editor-tab-btn ${activeTab === 'camera' ? 'active' : ''}`}
+          >
+            <Camera className="h-4 w-4" />
+            摄像机调试
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'world'}
+            onClick={() => setActiveTab('world')}
+            className={`world-editor-tab-btn ${activeTab === 'world' ? 'active' : ''}`}
+          >
+            <FileText className="h-4 w-4" />
+            world 文件编辑
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'intro'}
+            onClick={() => setActiveTab('intro')}
+            className={`world-editor-tab-btn ${activeTab === 'intro' ? 'active' : ''}`}
+          >
+            <Info className="h-4 w-4" />
+            介绍
+          </button>
+        </div>
+      </nav>
     </div>
   );
 }

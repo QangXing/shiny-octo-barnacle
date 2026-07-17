@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { EditorControls } from './EditorControls';
 import { MaterialManager } from './MaterialManager';
 import { Download, Upload, RefreshCw, AlertCircle, Maximize2, Minimize2 } from 'lucide-react';
 
@@ -37,33 +36,38 @@ export function WorldFileEditor({ worldText, setWorldText, onLoadDefault }: Worl
 
   return (
     <div className={`world-editor-tab ${maximized ? 'world-editor-tab-maximized' : ''}`}>
-      <EditorControls />
-
       <div className="world-editor-toolbar">
-        <button type="button" onClick={onLoadDefault} className="control-btn">
-          <RefreshCw className="mr-2 h-4 w-4" />
-          重载默认 world.txt
+        <button
+          type="button"
+          onClick={onLoadDefault}
+          className="world-editor-toolbar-btn"
+          title="重载默认 world.txt"
+        >
+          <RefreshCw className="h-4 w-4" />
         </button>
-        <button type="button" onClick={handleDownload} className="control-btn">
-          <Download className="mr-2 h-4 w-4" />
-          下载 world.txt
+        <button
+          type="button"
+          onClick={handleDownload}
+          className="world-editor-toolbar-btn"
+          title="下载 world.txt"
+        >
+          <Download className="h-4 w-4" />
         </button>
-        <label className="control-btn cursor-pointer">
-          <Upload className="mr-2 h-4 w-4" />
-          上传 world.txt
+        <label className="world-editor-toolbar-btn cursor-pointer" title="上传 world.txt">
+          <Upload className="h-4 w-4" />
           <input type="file" accept=".txt" onChange={handleUpload} className="hidden" />
         </label>
-        <div className="world-editor-zoom-spacer" />
+        <div className="world-editor-toolbar-spacer" />
         <button
           type="button"
           onClick={() => setMaximized((v) => !v)}
-          className="control-btn"
+          className="world-editor-toolbar-btn"
           title={maximized ? '恢复原状' : '放大编辑区'}
         >
           {maximized ? (
-            <Minimize2 className="h-5 w-5" />
+            <Minimize2 className="h-4 w-4" />
           ) : (
-            <Maximize2 className="h-5 w-5" />
+            <Maximize2 className="h-4 w-4" />
           )}
         </button>
       </div>

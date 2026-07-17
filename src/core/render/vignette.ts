@@ -20,7 +20,7 @@ export function getVignetteCanvas(): HTMLCanvasElement {
   const w = FILM_WIDTH;
   const h = FILM_HEIGHT;
 
-  // 暗角
+  // 轻微暗角（适配天蓝色背景）
   const grad = ctx.createRadialGradient(
     w / 2,
     h / 2,
@@ -29,13 +29,13 @@ export function getVignetteCanvas(): HTMLCanvasElement {
     h / 2,
     Math.min(w, h) * 0.75,
   );
-  grad.addColorStop(0, 'rgba(15, 23, 42, 0)');
-  grad.addColorStop(1, 'rgba(15, 23, 42, 0.45)');
+  grad.addColorStop(0, 'rgba(125, 211, 252, 0)');
+  grad.addColorStop(1, 'rgba(56, 189, 248, 0.18)');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, w, h);
 
   // 细微扫描线，间隔 6 像素以减少绘制量
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.04)';
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
   for (let y = 0; y < h; y += 6) {
     ctx.fillRect(0, y, w, 1);
   }

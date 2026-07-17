@@ -1,12 +1,14 @@
 import { useRendererStore } from '@/store/rendererStore';
-import { Camera, Video, Crosshair, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { Camera, Video, Crosshair, ZoomIn, ZoomOut, RotateCcw, Gauge } from 'lucide-react';
 import { MAX_ZOOM, MIN_ZOOM, ZOOM_STEP } from '@/core/config';
 
 export function EditorControls() {
   const camera = useRendererStore((state) => state.camera);
   const mode = useRendererStore((state) => state.mode);
+  const editorRotateSpeed = useRendererStore((state) => state.editorRotateSpeed);
   const setCamera = useRendererStore((state) => state.setCamera);
   const setMode = useRendererStore((state) => state.setMode);
+  const setEditorRotateSpeed = useRendererStore((state) => state.setEditorRotateSpeed);
 
   const thetaDeg = ((camera.theta * 180) / Math.PI);
   const wrappedTheta = ((thetaDeg % 360) + 360) % 360;
@@ -53,7 +55,7 @@ export function EditorControls() {
             onClick={() => setMode('camera')}
             className={`control-btn ${mode === 'camera' ? 'control-btn-accent' : ''}`}
           >
-            <Camera className="mr-2 h-4 w-4" />
+            <Camera className="mr-1 h-3.5 w-3.5" />
             摄像机1
           </button>
           <button
@@ -61,7 +63,7 @@ export function EditorControls() {
             onClick={() => setMode('camera2')}
             className={`control-btn ${mode === 'camera2' ? 'control-btn-accent' : ''}`}
           >
-            <Video className="mr-2 h-4 w-4" />
+            <Video className="mr-1 h-3.5 w-3.5" />
             摄像机2
           </button>
           <button
@@ -69,7 +71,7 @@ export function EditorControls() {
             onClick={() => setMode('debug')}
             className={`control-btn ${mode === 'debug' ? 'control-btn-accent' : ''}`}
           >
-            <Crosshair className="mr-2 h-4 w-4" />
+            <Crosshair className="mr-1 h-3.5 w-3.5" />
             调试
           </button>
         </div>
@@ -81,7 +83,7 @@ export function EditorControls() {
             className="control-btn"
             aria-label="放大"
           >
-            <ZoomIn className="h-5 w-5" />
+            <ZoomIn className="h-4 w-4" />
           </button>
           <button
             type="button"
@@ -89,7 +91,7 @@ export function EditorControls() {
             className="control-btn"
             aria-label="缩小"
           >
-            <ZoomOut className="h-5 w-5" />
+            <ZoomOut className="h-4 w-4" />
           </button>
           <button
             type="button"
@@ -97,9 +99,24 @@ export function EditorControls() {
             className="control-btn"
             aria-label="重置摄像机"
           >
-            <RotateCcw className="h-5 w-5" />
+            <RotateCcw className="h-4 w-4" />
           </button>
         </div>
+      </div>
+
+      <div className="editor-slider-row">
+        <Gauge className="h-3.5 w-3.5" />
+        <span>滑动灵敏度</span>
+        <input
+          type="range"
+          min={0.1}
+          max={5}
+          step={0.1}
+          value={editorRotateSpeed}
+          onChange={(e) => setEditorRotateSpeed(parseFloat(e.target.value))}
+          className="editor-slider"
+        />
+        <span className="world-editor-speed-value">{editorRotateSpeed.toFixed(1)}x</span>
       </div>
 
       <div className="editor-slider-row">

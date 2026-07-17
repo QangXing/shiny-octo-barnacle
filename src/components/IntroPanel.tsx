@@ -5,7 +5,7 @@ export function IntroPanel() {
     <div className="intro-panel">
       <section className="intro-section">
         <h2 className="intro-title">
-          <Box className="h-5 w-5 text-amber-400" />
+          <Box className="h-4 w-4 text-sky-500" />
           项目介绍
         </h2>
         <p className="intro-text">
@@ -17,14 +17,14 @@ export function IntroPanel() {
 
       <section className="intro-section">
         <h2 className="intro-title">
-          <MousePointer2 className="h-5 w-5 text-amber-400" />
+          <MousePointer2 className="h-4 w-4 text-sky-500" />
           World 编辑器说明
         </h2>
         <ul className="intro-list">
           <li>上方预览区可自由拖动中间分隔线调整上下区域大小。</li>
           <li>在预览区左右滑动可旋转 θ；θ 会自动保持在 0°~360° 之间。</li>
-          <li>“最大灵敏度”滑块可调整滑动旋转的速度倍数。</li>
-          <li>“摄像机调试”区可精确定位摄像机、切换视角、缩放。</li>
+          <li>底部导航可在“摄像机调试 / world 文件编辑 / 介绍”之间切换。</li>
+          <li>“摄像机调试”区可精确定位摄像机、切换视角、缩放并调整滑动灵敏度。</li>
           <li>“world 文件编辑”区可直接编辑 world.txt，支持下载与上传。</li>
           <li>所有贴图必须从 /material/ 材质包中调用，world.txt 中只需写文件名。</li>
         </ul>
@@ -32,7 +32,7 @@ export function IntroPanel() {
 
       <section className="intro-section">
         <h2 className="intro-title">
-          <Layers className="h-5 w-5 text-amber-400" />
+          <Layers className="h-4 w-4 text-sky-500" />
           world.txt 格式速查
         </h2>
         <pre className="intro-code">
@@ -56,7 +56,7 @@ stu name (x,y,z)`}
         rel="noreferrer"
         className="intro-github"
       >
-        <Github className="h-5 w-5" />
+        <Github className="h-4 w-4" />
         GitHub: QangXing/July-24th
       </a>
     </div>
