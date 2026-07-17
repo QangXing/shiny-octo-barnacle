@@ -100,6 +100,18 @@ export function WorldEditor() {
             <span className="world-editor-speed-value">{editorRotateSpeed.toFixed(1)}x</span>
           </div>
 
+          <div className="world-editor-tab-content" role="tabpanel">
+            {activeTab === 'camera' && <EditorControls />}
+            {activeTab === 'world' && (
+              <WorldFileEditor
+                worldText={worldText}
+                setWorldText={setWorldText}
+                onLoadDefault={loadDefaultWorld}
+              />
+            )}
+            {activeTab === 'intro' && <IntroPanel />}
+          </div>
+
           <div className="world-editor-tabs" role="tablist">
             <button
               type="button"
@@ -131,18 +143,6 @@ export function WorldEditor() {
               <Info className="mr-2 h-4 w-4" />
               介绍
             </button>
-          </div>
-
-          <div className="world-editor-tab-content" role="tabpanel">
-            {activeTab === 'camera' && <EditorControls />}
-            {activeTab === 'world' && (
-              <WorldFileEditor
-                worldText={worldText}
-                setWorldText={setWorldText}
-                onLoadDefault={loadDefaultWorld}
-              />
-            )}
-            {activeTab === 'intro' && <IntroPanel />}
           </div>
         </section>
       </main>

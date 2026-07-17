@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { EditorControls } from './EditorControls';
 import { MaterialManager } from './MaterialManager';
 import { Download, Upload, RefreshCw, AlertCircle, Maximize2, Minimize2 } from 'lucide-react';
 
@@ -11,7 +10,7 @@ interface WorldFileEditorProps {
 
 export function WorldFileEditor({ worldText, setWorldText, onLoadDefault }: WorldFileEditorProps) {
   const [error, setError] = useState<string | null>(null);
-  const [maximized, setMaximized] = useState(false);
+  const [stripFullscreen, setStripFullscreen] = useState(false);
 
   const handleDownload = useCallback(() => {
     const blob = new Blob([worldText], { type: 'text/plain;charset=utf-8' });
@@ -36,9 +35,7 @@ export function WorldFileEditor({ worldText, setWorldText, onLoadDefault }: Worl
   }, [setWorldText]);
 
   return (
-    <div className={`world-editor-tab ${maximized ? 'world-editor-tab-maximized' : ''}`}>
-      <EditorControls />
-
+    <div className="world-editor-tab">
       <div className="world-editor-toolbar">
         <button type="button" onClick={onLoadDefault} className="control-btn">
           <RefreshCw className="mr-2 h-4 w-4" />
@@ -56,11 +53,11 @@ export function WorldFileEditor({ worldText, setWorldText, onLoadDefault }: Worl
         <div className="world-editor-zoom-spacer" />
         <button
           type="button"
-          onClick={() => setMaximized((v) => !v)}
+          onClick={() => setStripFullscreen((v) => !v)}
           className="control-btn"
-          title={maximized ? '恢复原状' : '放大编辑区'}
+          title={stripFullscreen ? '退出全屏' : '放大图片区'}
         >
-          {maximized ? (
+          {stripFullscreen ? (
             <Minimize2 className="h-5 w-5" />
           ) : (
             <Maximize2 className="h-5 w-5" />
@@ -75,7 +72,11 @@ export function WorldFileEditor({ worldText, setWorldText, onLoadDefault }: Worl
         </div>
       )}
 
-      <div className={`world-editor-split ${maximized ? 'world-editor-split-maximized' : ''}`}>
+      <div className={`world-editor-workspace ${stripFullscreen ? 'strip-fullscreen' : ''}`}>
+        <div className={`world-editor-material-strip ${stripFullscreen ? 'fullscreen' : ''}`}>
+          <MaterialManager />
+        </div>
+
         <textarea
           className="world-editor-textarea"
           value={worldText}
@@ -83,7 +84,6 @@ export function WorldFileEditor({ worldText, setWorldText, onLoadDefault }: Worl
           spellCheck={false}
           placeholder="# world.txt 格式说明：&#10;# 贴图必须放在 /material/ 文件夹，world.txt 中只写文件名&#10;# 普通精灵: (x1,y1,z1) (x2,y2,z2) image.png&#10;# 结构定义: structure name:( ... )&#10;# 结构调用: stu name (x,y,z)&#10;# 坐标支持小数值，自动乘以 128（如 (1,1,1) 表示 (128,128,128)）"
         />
-        {!maximized && <MaterialManager />}
       </div>
     </div>
   );

@@ -8,7 +8,7 @@ export function renderDebugView(
   height: number,
   cam: Camera,
 ): void {
-  screenCtx.fillStyle = '#0f172a';
+  screenCtx.fillStyle = '#87ceeb';
   screenCtx.fillRect(0, 0, width, height);
 
   // 调试视图缩放：让世界中的一个较大范围适配屏幕

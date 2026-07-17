@@ -11,7 +11,7 @@ export function renderCameraView(
   sprites: Sprite[],
 ): void {
   // 清空胶片
-  filmCtx.fillStyle = '#0f172a';
+  filmCtx.fillStyle = '#87ceeb';
   filmCtx.fillRect(0, 0, FILM_WIDTH, FILM_HEIGHT);
 
   filmCtx.save();
